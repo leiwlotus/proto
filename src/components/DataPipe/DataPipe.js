@@ -15,6 +15,7 @@ class DataPipe extends Component {
     this.state = {
       totalHeight: 0,
       operators: [],
+      idCounter: 0
     }
   };
 
@@ -29,28 +30,42 @@ class DataPipe extends Component {
   addOperator() {
     const operatorToAdd = this.getOperatorName();
     const operators = this.state.operators;
-    operators.push(operatorToAdd);
+    operators.push({
+      name: operatorToAdd,
+      key: this.getNextKey()
+    });
     this.setState({
       operators: operators
     })
   };
 
+  getNextKey() {
+    const nextId = this.state.idCounter;
+    this.setState({ idCounter: nextId + 1});
+    return nextId;
+  };
+
   componentDidMount() {
-    debugger;
     const elem = this.refs.container;
     this.setState({totalHeight: elem.clientHeight});
   };
 
   render() {
     this.context.onSetTitle(this.props.title);
-    debugger;
     let elems = null;
     if (this.state.totalHeight > 0) {
       const numOperators = this.state.operators.length;
-      const rectHeight = numOperators > 1 ?
+      let rectHeight = numOperators > 1 ?
         (this.state.totalHeight - numOperators * 2 * RADIUS) / (numOperators - 1) : 0;
-      elems = this.state.operators.map((operatorName, i) => {
-        const opElem = this.getOperator(operatorName);
+      if (rectHeight < MIN_RECT_HEIGHT) {
+        rectHeight = MIN_RECT_HEIGHT;
+      }
+      elems = this.state.operators.map((operator, i) => {
+        let opElem = this.getOperator(operator);
+        if (i < this.state.operators.length - 1) {
+          const rectElem = this.getRect('rect_' + operator.key, rectHeight);
+          opElem = ([opElem, rectElem]);
+        }
         return opElem;
       });
     }
@@ -58,13 +73,14 @@ class DataPipe extends Component {
       <div className={s.container} ref="container">
         {elems}
         <button className={s.addButton} onClick={() => this.addOperator()}>Add Operator</button>
+        <button className={s.deleteButton} onClick={() => this.deleteOperator()}>Delete Operator</button>
       </div>
     );
-  }
+  };
 
   getOperatorName() {
     let operator;
-    const numOps = this.state.numOperators;
+    const numOps = this.state.operators.length;
     if (numOps === 0) {
       operator = "join";
     } else {
@@ -80,16 +96,24 @@ class DataPipe extends Component {
     return operator;
   };
 
-  getOperator(name) {
-    if (name === 'join') return this.getJoin();
-    if (name === 'combobulator') return this.getCombobulator();
-    if (name === 'filter') return this.getFilter();
-    if (name === 'reformat') return this.getReformat();
+  getOperator({name, key}) {
+    if (name === 'join') return this.getJoin(key);
+    if (name === 'combobulator') return this.getCombobulator(key);
+    if (name === 'filter') return this.getFilter(key);
+    if (name === 'reformat') return this.getReformat(key);
   };
 
-  getReformat() {
+  deleteOperator() {
+    const operators = this.state.operators;
+    if (operators.length > 0) {
+      operators.pop();
+      this.setState({ operators: operators });
+    }
+  };
+
+  getReformat(key) {
     return (
-      <svg width="40" height="40" viewBox="-2 -2 44 44">
+      <svg key={key} width="40" height="40" viewBox="-2 -2 44 44">
         <defs>
             <circle id="a" cx="20" cy="20" r="20"/>
         </defs>
@@ -104,9 +128,9 @@ class DataPipe extends Component {
     );
   };
 
-  getCombobulator() {
+  getCombobulator(key) {
     return (
-      <svg width="40" height="40" viewBox="-2 -2 44 44">
+      <svg key={key} width="40" height="40" viewBox="-2 -2 44 44">
         <defs>
             <circle id="a" cx="20" cy="20" r="20"/>
         </defs>
@@ -115,7 +139,7 @@ class DataPipe extends Component {
                 <use stroke="#E4C04D" strokeWidth="4" fill="#DCAD02" xlinkHref="#a"/>
                 <use xlinkHref="#a"/>
             </g>
-            <g stroke="#FFF" stroke-linecap="square">
+            <g stroke="#FFF" strokeLinecap="square">
                 <path d="M13 12h14M13 16h14M13 20h14M13 24h14M13 28h14"/>
             </g>
         </g>
@@ -123,9 +147,9 @@ class DataPipe extends Component {
     );
   };
 
-  getFilter() {
+  getFilter(key) {
     return (
-      <svg width="40" height="40" viewBox="-2 -2 44 44">
+      <svg key={key} width="40" height="40" viewBox="-2 -2 44 44">
         <defs>
             <circle id="a" cx="20" cy="20" r="20"/>
         </defs>
@@ -134,15 +158,15 @@ class DataPipe extends Component {
                 <use stroke="#E4C04D" strokeWidth="4" fill="#DCAD02" xlinkHref="#a"/>
                 <use xlinkHref="#a"/>
             </g>
-            <path d="M20 12v16M24.5 12.5L22 28M15.5 12.5L18 28M11.5 14.5L16 28M28.5 14.5L24 28" stroke="#FFF" stroke-linecap="square"/>
+            <path d="M20 12v16M24.5 12.5L22 28M15.5 12.5L18 28M11.5 14.5L16 28M28.5 14.5L24 28" stroke="#FFF" strokeLinecap="square"/>
         </g>
       </svg>
     );
   };
 
-  getJoin() {
+  getJoin(key) {
     return (
-      <svg width="40" height="40" viewBox="-2 -2 44 44">
+      <svg key={key} width="40" height="40" viewBox="-2 -2 44 44">
         <defs><circle id="a" cx="20" cy="20" r="20"/></defs>
         <g fill="none" fill-rule="evenodd">
           <g><use stroke="#E4C04D" strokeWidth="4" fill="#DCAD02" xlinkHref="#a"/><use xlinkHref="#a"/></g>
@@ -155,12 +179,12 @@ class DataPipe extends Component {
     );
   };
 
-  getRect(height) {
+  getRect(key, height) {
     if (!height) {
       height = 80;
     }
     return (
-      <svg with="6" height={height}>
+      <svg key={key} width="6" height={height}>
         <rect x="0" y = "0" width="6" height={height} fill="#DCAD02"/>
       </svg>
     );
