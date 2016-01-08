@@ -13,6 +13,8 @@ import s from './App.scss';
 import Header from '../Header';
 import Feedback from '../Feedback';
 import Footer from '../Footer';
+import DataPipe from '../DataPipe';
+import d3 from 'd3';
 
 class App extends Component {
 
@@ -53,14 +55,9 @@ class App extends Component {
   }
 
   render() {
-    return !this.props.error ? (
-      <div>
-        <Header />
-        {this.props.children}
-        <Feedback />
-        <Footer />
-      </div>
-    ) : this.props.children;
+    return (
+      <DataPipe title="Data pipe"/>
+    );
   }
 
 }
